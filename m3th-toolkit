@@ -1,0 +1,8 @@
+m3th-toolkit/
+├── README.md              <-- The "Face" of your project (instructions)
+├── LICENSE                <-- Usually MIT or GPL
+├── install.sh             <-- The "One-Click" installer
+└── bin/                   <-- The actual tools
+    ├── m3th-boot          <-- Main entry point
+    ├── m3th-route         <-- Routing logic
+    └── venice             <-- AI Wrapper
