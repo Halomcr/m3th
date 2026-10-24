@@ -1,0 +1,98 @@
+# 1. Install Dependencies
+pkg update -y && pkg install git curl python tor hydra -y
+
+# 2. Create Folder Structure
+mkdir -p ~/m3th_toolkit/bin
+
+# 3. Create the M3TH-BOOT file
+cat << 'EOF' > ~/m3th_toolkit/bin/m3th-boot
+#!/bin/bash
+export PATH=$PATH:$HOME/bin
+clear
+echo "================================================================"
+echo "              🌀 M3TH TOOLKIT - MOBILE EDITION                 "
+echo "================================================================"
+if [ -z "$OPENROUTER_API_KEY" ]; then
+    echo "API Key : ❌ MISSING (Set OPENROUTER_API_KEY)"
+else
+    echo "API Key : ✅ OK"
+fi
+[ -d "/data/data/com.termux" ] && echo "ENV     : ✅ TERMUX" || echo "ENV     : ✅ LINUX"
+echo "================================================================"
+echo "  1  talk to the ai (venice)"
+echo "  2  osint (amass, sherlock)"
+echo "  3  brute (hydra)"
+echo "  4  lotl (living off the land)"
+echo "  q  quit"
+echo "================================================================"
+read -p "vz> " choice
+case $choice in
+    1) ~/bin/venice "$2" ;;
+    2) echo "OSINT Module - Run amass/sherlock directly." ;;
+    3) ~/bin/brute-hub ;;
+    4) ~/bin/lotl-hub ;;
+    q) exit ;;
+    *) echo "Invalid choice" ;;
+esac
+EOF
+
+# 4. Create the VENICE file (The AI Engine)
+cat << 'EOF' > ~/m3th_toolkit/bin/venice
+#!/bin/bash
+QUERY=$1
+if [ -z "$OPENROUTER_API_KEY" ]; then
+    echo "❌ Error: Set your OPENROUTER_API_KEY first!"
+    exit 1
+fi
+echo "[*] Venice is thinking..."
+curl -s -N -X POST "$API/chat/completions" \
+     -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+     -H "Content-Type: application/json" \
+     -d "{\"model\":\"cognitivecomputations/dolphin-mistral-24b-venice-edition\",\"messages\":[{\"role\":\"user\",\"content\":\"$QUERY\"}],\"stream\":true}" | while read -r line; do
+    if [[ $line == data:* ]]; then
+        echo -n $line | grep -oP '(?<="content":")[^"]*' || true
+    fi
+done
+echo -e "\n"
+EOF
+
+# 5. Create the BRUTE-HUB file
+cat << 'EOF' > ~/m3th_toolkit/bin/brute-hub
+#!/bin/bash
+clear
+echo "--- 🔨 BRUTE MODULE ---"
+read -p "Target IP: " target
+read -p "User: " user
+read -p "Wordlist: " wordlist
+hydra -l "$user" -P "$wordlist" "$target" ssh
+EOF
+
+# 6. Create the LOTL-HUB file
+cat << 'EOF' > ~/m3th_toolkit/bin/lotl-hub
+#!/bin/bash
+clear
+echo "--- 🌿 LOTL MODULE ---"
+echo "1) Check System Crontabs"
+echo "2) Search for hidden files"
+echo "3) Check User Environment"
+read -p "lotl> " lchoice
+case $lchoice in
+    1) crontab -l ;;
+    2) find / -name ".*" 2>/dev/null ;;
+    3) env ;;
+esac
+EOF
+
+# 7. Finalize Permissions and Move to System Bin
+cp ~/m3th_toolkit/bin/* ~/bin/
+chmod +x ~/bin/*
+rm -rf ~/m3th_toolkit
+
+# 8. Final Prompt
+echo "----------------------------------------------------------------"
+echo "✅ SETUP COMPLETE!"
+echo "----------------------------------------------------------------"
+echo "1. Run this to set your key:  export OPENROUTER_API_KEY='your_key'"
+echo "2. Run this to set your API:  export API='https://openrouter.ai/api/v1'"
+echo "3. To launch:                   m3th-boot"
+echo "----------------------------------------------------------------"
